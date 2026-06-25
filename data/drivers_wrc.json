@@ -1,0 +1,16 @@
+[
+  {"code": "OGI", "name": "Sébastien Ogier",   "team": "Toyota Gazoo Racing WRT",  "country": "France"},
+  {"code": "EVA", "name": "Elfyn Evans",        "team": "Toyota Gazoo Racing WRT",  "country": "United Kingdom"},
+  {"code": "KAT", "name": "Takamoto Katsuta",   "team": "Toyota Gazoo Racing WRT",  "country": "Japan"},
+  {"code": "SOL", "name": "Oliver Solberg",     "team": "Toyota Gazoo Racing WRT",  "country": "Sweden"},
+  {"code": "PAJ", "name": "Sami Pajari",        "team": "Toyota Gazoo Racing WRT",  "country": "Finland"},
+  {"code": "NEU", "name": "Thierry Neuville",   "team": "Hyundai Shell Mobis WRT",  "country": "Belgium"},
+  {"code": "FOU", "name": "Adrien Fourmaux",    "team": "Hyundai Shell Mobis WRT",  "country": "France"},
+  {"code": "LAP", "name": "Esapekka Lappi",     "team": "Hyundai Shell Mobis WRT",  "country": "Finland"},
+  {"code": "SOR", "name": "Dani Sordo",         "team": "Hyundai Shell Mobis WRT",  "country": "Spain"},
+  {"code": "PAD", "name": "Hayden Paddon",      "team": "Hyundai Shell Mobis WRT",  "country": "New Zealand"},
+  {"code": "MUN", "name": "Grégoire Munster",   "team": "M-Sport Ford WRT",         "country": "Luxembourg"},
+  {"code": "MCE", "name": "Josh McErlean",      "team": "M-Sport Ford WRT",         "country": "United Kingdom"},
+  {"code": "ARM", "name": "Jon Armstrong",      "team": "M-Sport Ford WRT",         "country": "United Kingdom"},
+  {"code": "SES", "name": "Mārtiņš Sesks",      "team": "M-Sport Ford WRT",         "country": "Latvia"}
+]
