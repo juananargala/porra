@@ -1,0 +1,43 @@
+{
+  "wrc": [
+    {"round": 1,  "name": "Rallye Monte-Carlo",      "country": "Monaco",       "flag": "🇲🇨", "start": "2026-01-22", "end": "2026-01-25"},
+    {"round": 2,  "name": "Rally Sweden",             "country": "Sweden",       "flag": "🇸🇪", "start": "2026-02-12", "end": "2026-02-15"},
+    {"round": 3,  "name": "Safari Rally Kenya",       "country": "Kenya",        "flag": "🇰🇪", "start": "2026-03-12", "end": "2026-03-15"},
+    {"round": 4,  "name": "Croatia Rally",            "country": "Croatia",      "flag": "🇭🇷", "start": "2026-04-09", "end": "2026-04-12"},
+    {"round": 5,  "name": "Rally Islas Canarias",     "country": "Spain",        "flag": "🇪🇸", "start": "2026-04-23", "end": "2026-04-26"},
+    {"round": 6,  "name": "Rally de Portugal",        "country": "Portugal",     "flag": "🇵🇹", "start": "2026-05-07", "end": "2026-05-10"},
+    {"round": 7,  "name": "FORUM8 Rally Japan",       "country": "Japan",        "flag": "🇯🇵", "start": "2026-05-28", "end": "2026-05-31"},
+    {"round": 8,  "name": "EKO Acropolis Rally Greece","country": "Greece",      "flag": "🇬🇷", "start": "2026-06-25", "end": "2026-06-28"},
+    {"round": 9,  "name": "Rally Estonia",            "country": "Estonia",      "flag": "🇪🇪", "start": "2026-07-16", "end": "2026-07-19"},
+    {"round": 10, "name": "Rally Finland",            "country": "Finland",      "flag": "🇫🇮", "start": "2026-07-30", "end": "2026-08-02"},
+    {"round": 11, "name": "Rally del Paraguay",       "country": "Paraguay",     "flag": "🇵🇾", "start": "2026-08-27", "end": "2026-08-30"},
+    {"round": 12, "name": "Rally Chile Bio Bío",      "country": "Chile",        "flag": "🇨🇱", "start": "2026-09-10", "end": "2026-09-13"},
+    {"round": 13, "name": "Rally Italia Sardegna",    "country": "Italy",        "flag": "🇮🇹", "start": "2026-10-01", "end": "2026-10-04"},
+    {"round": 14, "name": "Rally Saudi Arabia",       "country": "Saudi Arabia", "flag": "🇸🇦", "start": "2026-11-11", "end": "2026-11-14"}
+  ],
+  "f1": [
+    {"round": 1,  "name": "Australian Grand Prix",      "country": "Australia",       "flag": "🇦🇺", "start": "2026-03-06", "end": "2026-03-08"},
+    {"round": 2,  "name": "Chinese Grand Prix",          "country": "China",           "flag": "🇨🇳", "start": "2026-03-13", "end": "2026-03-15", "sprint": true},
+    {"round": 3,  "name": "Japanese Grand Prix",         "country": "Japan",           "flag": "🇯🇵", "start": "2026-03-27", "end": "2026-03-29"},
+    {"round": 4,  "name": "Miami Grand Prix",            "country": "USA",             "flag": "🇺🇸", "start": "2026-05-01", "end": "2026-05-03", "sprint": true},
+    {"round": 5,  "name": "Canadian Grand Prix",         "country": "Canada",          "flag": "🇨🇦", "start": "2026-05-22", "end": "2026-05-24", "sprint": true},
+    {"round": 6,  "name": "Monaco Grand Prix",           "country": "Monaco",          "flag": "🇲🇨", "start": "2026-06-05", "end": "2026-06-07"},
+    {"round": 7,  "name": "Barcelona-Catalunya Grand Prix","country": "Spain",         "flag": "🇪🇸", "start": "2026-06-12", "end": "2026-06-14"},
+    {"round": 8,  "name": "Austrian Grand Prix",         "country": "Austria",         "flag": "🇦🇹", "start": "2026-06-26", "end": "2026-06-28"},
+    {"round": 9,  "name": "British Grand Prix",          "country": "United Kingdom",  "flag": "🇬🇧", "start": "2026-07-03", "end": "2026-07-05", "sprint": true},
+    {"round": 10, "name": "Belgian Grand Prix",          "country": "Belgium",         "flag": "🇧🇪", "start": "2026-07-17", "end": "2026-07-19"},
+    {"round": 11, "name": "Hungarian Grand Prix",        "country": "Hungary",         "flag": "🇭🇺", "start": "2026-07-24", "end": "2026-07-26"},
+    {"round": 12, "name": "Dutch Grand Prix",            "country": "Netherlands",     "flag": "🇳🇱", "start": "2026-08-21", "end": "2026-08-23", "sprint": true},
+    {"round": 13, "name": "Italian Grand Prix",          "country": "Italy",           "flag": "🇮🇹", "start": "2026-09-04", "end": "2026-09-06"},
+    {"round": 14, "name": "Spanish Grand Prix (Madrid)", "country": "Spain",           "flag": "🇪🇸", "start": "2026-09-11", "end": "2026-09-13"},
+    {"round": 15, "name": "Azerbaijan Grand Prix",       "country": "Azerbaijan",      "flag": "🇦🇿", "start": "2026-09-24", "end": "2026-09-26"},
+    {"round": 16, "name": "Singapore Grand Prix",        "country": "Singapore",       "flag": "🇸🇬", "start": "2026-10-09", "end": "2026-10-11", "sprint": true},
+    {"round": 17, "name": "United States Grand Prix",    "country": "USA",             "flag": "🇺🇸", "start": "2026-10-23", "end": "2026-10-25"},
+    {"round": 18, "name": "Mexico City Grand Prix",      "country": "Mexico",          "flag": "🇲🇽", "start": "2026-10-30", "end": "2026-11-01"},
+    {"round": 19, "name": "São Paulo Grand Prix",        "country": "Brazil",          "flag": "🇧🇷", "start": "2026-11-06", "end": "2026-11-08"},
+    {"round": 20, "name": "Las Vegas Grand Prix",        "country": "USA",             "flag": "🇺🇸", "start": "2026-11-19", "end": "2026-11-21"},
+    {"round": 21, "name": "Qatar Grand Prix",            "country": "Qatar",           "flag": "🇶🇦", "start": "2026-11-27", "end": "2026-11-29"},
+    {"round": 22, "name": "Abu Dhabi Grand Prix",        "country": "UAE",             "flag": "🇦🇪", "start": "2026-12-04", "end": "2026-12-06"}
+  ],
+  "_notes": "Bahrein (10-12 abr) y Arabia Saudi (17-19 abr) F1 2026 fueron CANCELADOS (no aplazados) por el conflicto en Oriente Medio; no aparecen en este calendario. Verificar antes de cada temporada nueva."
+}
