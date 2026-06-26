@@ -24,6 +24,7 @@ Uso:
 """
 
 import argparse
+import html
 import json
 import re
 import sys
@@ -37,9 +38,17 @@ DATA_DIR = REPO_ROOT / "data"
 FIA_F1_CALENDAR_URL = "https://www.fia.com/events/fia-formula-one-world-championship/season-{year}/formula-one"
 FIA_F1_ENTRY_LIST_URL = "https://www.fia.com/events/fia-formula-one-world-championship/season-{year}/{year}-fia-formula-one-world-championship-entry"
 FIA_WRC_CALENDAR_URL = "https://www.fia.com/events/world-rally-championship/season-{year}/events-calendar"
-WRC_DRIVERS_URL = "https://www.wrc.com/en/wrc/standings/drivers/"
+WRC_DRIVERS_URL = "https://www.wrc.com/en/teams-and-drivers?rb3TabId=wrc"
 
-HEADERS = {"User-Agent": "Mozilla/5.0 (compatible; porra-setup-script/1.0)"}
+HEADERS = {
+    "User-Agent": (
+        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 "
+        "(KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36"
+    ),
+    "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+    "Accept-Language": "en-US,en;q=0.9,es;q=0.8",
+    "Referer": "https://www.wrc.com/",
+}
 
 
 def fetch_url(url: str, timeout: int = 20) -> str:
@@ -63,83 +72,196 @@ def fetch_json(url: str, timeout: int = 20) -> dict:
 # sigue siendo HTML que puede cambiar de estructura. El resultado SIEMPRE
 # se revisa a mano antes de sustituir nada.
 
+def iso2_to_flag(code: str) -> str:
+    """Convierte un código de país ISO 3166-1 alpha-2 (ej. 'AT') en su
+    emoji de bandera correspondiente, combinando los dos caracteres
+    regionales Unicode."""
+    code = code.strip().upper()
+    if len(code) != 2 or not code.isalpha():
+        return ""
+    return "".join(chr(0x1F1E6 + ord(c) - ord("A")) for c in code)
+
+
+# Mapeo ISO 3166-1 alpha-2 -> nombre de país en español, para los países
+# habituales del calendario F1/WRC. Si aparece un código nuevo que no esté
+# aquí, se usa el código de 3 letras que da la FIA como mejor esfuerzo,
+# y conviene añadirlo a este diccionario en la revisión manual.
+COUNTRY_NAMES_ES = {
+    "AU": "Australia", "CN": "China", "JP": "Japón", "BH": "Baréin",
+    "SA": "Arabia Saudí", "US": "Estados Unidos", "CA": "Canadá",
+    "MC": "Mónaco", "ES": "España", "AT": "Austria", "GB": "Reino Unido",
+    "BE": "Bélgica", "HU": "Hungría", "NL": "Países Bajos", "IT": "Italia",
+    "AZ": "Azerbaiyán", "SG": "Singapur", "MX": "México", "BR": "Brasil",
+    "QA": "Catar", "AE": "Emiratos Árabes Unidos",
+    "MA": "Marruecos", "SE": "Suecia", "KE": "Kenia", "HR": "Croacia",
+    "PT": "Portugal", "GR": "Grecia", "EE": "Estonia", "FI": "Finlandia",
+    "PY": "Paraguay", "CL": "Chile", "LV": "Letonia", "LU": "Luxemburgo",
+    "NZ": "Nueva Zelanda",
+}
+
+
+def iso2_to_country_name(code: str, fallback: str = "") -> str:
+    code = code.strip().upper()
+    return COUNTRY_NAMES_ES.get(code, fallback)
+
+
+# formula1.com/en/drivers da el país en inglés ("Flag of Great Britain"),
+# a diferencia de la FIA que da un código ISO2. Mapeo best-effort para
+# los países habituales de la parrilla; si aparece uno nuevo que no esté
+# aquí, se deja el texto en inglés tal cual para revisión manual.
+COUNTRY_NAMES_EN_TO_ES = {
+    "Great Britain": "Reino Unido", "United Kingdom": "Reino Unido",
+    "Italy": "Italia", "Monaco": "Mónaco", "Netherlands": "Países Bajos",
+    "France": "Francia", "Germany": "Alemania", "Spain": "España",
+    "Australia": "Australia", "Mexico": "México", "Canada": "Canadá",
+    "Finland": "Finlandia", "Thailand": "Tailandia", "Argentina": "Argentina",
+    "Brazil": "Brasil", "New Zealand": "Nueva Zelanda",
+}
+
+
 def fetch_fia_f1_calendar(year: int) -> list[dict]:
     url = FIA_F1_CALENDAR_URL.format(year=year)
     print(f"[F1] Descargando calendario desde FIA: {url}")
     try:
-        html = fetch_url(url)
+        page_html = fetch_url(url)
     except urllib.error.URLError as exc:
         print(f"[F1] AVISO: no se pudo descargar el calendario ({exc}). "
               f"Tendrás que rellenarlo a mano.", file=sys.stderr)
         return []
 
-    # Heurística sobre bloques de evento en la página de temporada de la FIA.
-    # Ajustar el patrón si la FIA cambia su HTML.
+    # Patrón confirmado contra el HTML real de fia.com (estructura "inner"
+    # con date/event/country). Carreras activas van envueltas en <a href>;
+    # las canceladas ("Called Off") no llevan ese enlace, así que el grupo
+    # opcional de la URL nos sirve también para detectarlas y excluirlas.
+    # NOTA: la detección anterior se basaba en la presencia de <a href>
+    # alrededor del nombre del evento, asumiendo que las carreras
+    # canceladas no llevaban enlace. Eso falló en la práctica: lo más
+    # probable es que ese enlace lo añada JavaScript tras la carga
+    # inicial (lo que se ve al "Inspeccionar" en el navegador es el DOM
+    # ya hidratado, no el HTML crudo que descarga urllib). En su lugar,
+    # detectamos directamente el texto "Called Off" que la FIA muestra
+    # como texto plano junto a los eventos cancelados/aplazados -- eso
+    # sí es contenido estático, presente desde el primer HTML.
     pattern = re.compile(
-        r'data-event-name="([^"]+)".{0,500}?'
-        r'data-country="([^"]+)".{0,500}?'
-        r'data-start-date="(\d{4}-\d{2}-\d{2})".{0,200}?'
-        r'data-end-date="(\d{4}-\d{2}-\d{2})"',
+        r'<div class="day">(\d{1,2})</div>\s*'
+        r'<div class="month">(\w+)</div>'
+        r'.*?'
+        r'<div class="event-name cell">([^<]+)</div>\s*'
+        r'<div class="event-location">([^<]*)</div>'
+        r'(.*?)'
+        r'countrycode-(\w{2})'
+        r'.*?'
+        r'<div class="country-name">([^<]+)</div>',
         re.DOTALL,
     )
-    matches = pattern.findall(html)
+
+    month_map = {
+        "Jan": "01", "Feb": "02", "Mar": "03", "Apr": "04",
+        "May": "05", "Jun": "06", "Jul": "07", "Aug": "08",
+        "Sep": "09", "Oct": "10", "Nov": "11", "Dec": "12",
+    }
 
     calendar = []
-    for i, (name, country, start, end) in enumerate(matches, start=1):
+    skipped_cancelled = 0
+    for m in pattern.finditer(page_html):
+        day, month_txt, name, location, between_text, country_iso2, country_name = m.groups()
+
+        if "Called Off" in between_text or "Postponed" in between_text:
+            # Cancelado/aplazado -- no se va a disputar, no lo incluimos.
+            skipped_cancelled += 1
+            continue
+
+        month_num = month_map.get(month_txt[:3].title())
+        if not month_num:
+            continue  # mes no reconocido, lo dejamos fuera para revisión manual
+
+        race_date = f"{year}-{month_num}-{int(day):02d}"
+
         calendar.append({
-            "round": i,
-            "name": name.strip(),
-            "country": country.strip(),
-            "flag": "",  # rellenar a mano: emoji de bandera del país
-            "start": start,
-            "end": end,
-            "sprint": False,  # la FIA no siempre marca el sprint con claridad; revisar a mano
+            "round": len(calendar) + 1,
+            "name": html.unescape(name.strip()),
+            "country": iso2_to_country_name(country_iso2, fallback=html.unescape(country_name.strip())),
+            "flag": iso2_to_flag(country_iso2),
+            # La FIA solo da el día de carrera (domingo); el fin de semana
+            # F1 suele ser viernes-domingo, así que "start" es aproximado
+            # y conviene revisarlo si hay sesiones especiales (sprint, etc.)
+            "start": race_date,
+            "end": race_date,
+            "sprint": False,  # la FIA no marca el sprint con claridad aquí; revisar a mano
         })
+
+    if skipped_cancelled:
+        print(f"[F1] {skipped_cancelled} evento(s) marcados 'Called Off' excluidos del calendario.")
 
     if not calendar:
         print("[F1] AVISO: el patrón de scraping no encontró nada en la web de la FIA. "
               "Rellena el calendario F1 a mano este año.", file=sys.stderr)
     else:
-        print(f"[F1] {len(calendar)} carreras encontradas (revisar flag/sprint).")
+        print(f"[F1] {len(calendar)} carreras encontradas (revisar 'start' real del finde y 'sprint').")
 
     return calendar
 
 
-def fetch_fia_f1_drivers(year: int) -> list[dict]:
-    url = FIA_F1_ENTRY_LIST_URL.format(year=year)
-    print(f"[F1] Descargando entry list desde FIA: {url}")
+def fetch_f1_drivers(year: int) -> list[dict]:
+    """
+    Scraping de formula1.com/en/drivers (la entry list oficial de la FIA
+    es una imagen, no texto, así que no es scrapeable -- ver notas en
+    el README). Esta página da nombre, equipo y país por piloto; el
+    'code' de 3 letras se sugiere a partir del apellido y SIEMPRE hay
+    que revisarlo a mano (colisiones, casos especiales tipo "BOT" vs
+    "BOR", etc.)
+    """
+    url = "https://www.formula1.com/en/drivers"
+    print(f"[F1] Descargando pilotos desde {url} ...")
     try:
-        html = fetch_url(url)
+        page_html = fetch_url(url)
     except urllib.error.URLError as exc:
-        print(f"[F1] AVISO: no se pudo descargar la entry list ({exc}). "
+        print(f"[F1] AVISO: no se pudo descargar la lista de pilotos ({exc}). "
               f"Tendrás que rellenarla a mano.", file=sys.stderr)
         return []
 
+    # Patrón confirmado contra el HTML real de formula1.com/en/drivers:
+    # nombre y apellido en <p> con clases "display-l-regular"/"display-l-bold",
+    # equipo en <p class="...body-xs-semibold...">, país en <title>Flag of X</title>
     pattern = re.compile(
-        r'data-driver-name="([^"]+)".{0,300}?'
-        r'data-team-name="([^"]+)".{0,300}?'
-        r'data-nationality="([^"]+)"',
+        r'href="(/en/drivers/[^"]+)"'
+        r'.*?'
+        r'<p class="[^"]*display-l-regular[^"]*"[^>]*>([^<]+)</p>\s*'
+        r'<p class="[^"]*display-l-bold[^"]*"[^>]*>([^<]+)</p>'
+        r'.*?'
+        r'<p class="[^"]*body-xs-semibold[^"]*"[^>]*>([^<]+)</p>'
+        r'.*?'
+        r'<title>Flag of ([^<]+)</title>',
         re.DOTALL,
     )
-    matches = pattern.findall(html)
 
+    seen_codes: dict[str, int] = {}
     drivers = []
-    for name, team, country in matches:
-        surname = name.strip().split()[-1]
-        suggested_code = surname[:3].upper()  # sugerencia, revisar colisiones a mano
+    for m in pattern.finditer(page_html):
+        _slug, first_name, last_name, team, country_en = m.groups()
+        full_name = html.unescape(f"{first_name.strip()} {last_name.strip()}")
+
+        suggested_code = last_name.strip()[:3].upper()
+        seen_codes[suggested_code] = seen_codes.get(suggested_code, 0) + 1
+
         drivers.append({
-            "code": suggested_code,
-            "name": name.strip(),
+            "code": suggested_code,  # SUGERENCIA, revisar colisiones a mano
+            "name": full_name,
             "team": team.strip(),
-            "country": country.strip(),
+            "country": COUNTRY_NAMES_EN_TO_ES.get(country_en.strip(), country_en.strip()),
         })
 
+    collisions = [code for code, count in seen_codes.items() if count > 1]
+    if collisions:
+        print(f"[F1] AVISO: códigos sugeridos duplicados, revisar a mano: {collisions}",
+              file=sys.stderr)
+
     if not drivers:
-        print("[F1] AVISO: el patrón de scraping no encontró pilotos en la entry list de la FIA. "
+        print("[F1] AVISO: el patrón de scraping no encontró pilotos en formula1.com. "
               "Rellena la lista F1 a mano este año.", file=sys.stderr)
     else:
         print(f"[F1] {len(drivers)} pilotos encontrados (revisar 'code', "
-              "puede haber colisiones entre apellidos repetidos).")
+              f"{len(collisions)} colisión(es) detectada(s)).")
 
     return drivers
 
@@ -150,96 +272,141 @@ def fetch_fia_f1_drivers(year: int) -> list[dict]:
 
 def fetch_wrc_calendar(year: int) -> list[dict]:
     """
-    Scraping best-effort del calendario WRC, desde la página de la FIA
-    (más estable que la web comercial de WRC, pero sigue siendo HTML
-    susceptible de cambiar de estructura). Si falla o devuelve poco,
-    no pasa nada: el resultado se revisa a mano de todos modos.
+    Scraping del calendario WRC desde la página de la FIA, usando el
+    mismo patrón de estructura "inner" confirmado para F1, con la
+    diferencia de que WRC publica un rango from-date/to-date en vez
+    de un único día de carrera.
+
+    A diferencia de F1, aquí no hay <a href> que distinga eventos
+    cancelados de activos, así que cualquier rally "Called Off" que
+    pudiera aparecer no se filtra automáticamente: revisar a mano.
     """
     url = FIA_WRC_CALENDAR_URL.format(year=year)
     print(f"[WRC] Descargando calendario desde FIA: {url}")
     try:
-        html = fetch_url(url)
+        page_html = fetch_url(url)
     except urllib.error.URLError as exc:
         print(f"[WRC] AVISO: no se pudo descargar el calendario ({exc}). "
               f"Tendrás que rellenarlo a mano.", file=sys.stderr)
         return []
 
-    # Heurística simple: buscamos bloques con nombre de rally + fechas.
-    # Esto es deliberadamente tosco -- es un punto de partida, no una
-    # fuente de verdad. Ajusta el patrón si la FIA cambia su HTML.
+    month_map = {
+        "Jan": "01", "Feb": "02", "Mar": "03", "Apr": "04",
+        "May": "05", "Jun": "06", "Jul": "07", "Aug": "08",
+        "Sep": "09", "Oct": "10", "Nov": "11", "Dec": "12",
+    }
+
     pattern = re.compile(
-        r'data-event-name="([^"]+)".{0,500}?'
-        r'data-country="([^"]+)".{0,500}?'
-        r'data-start-date="(\d{4}-\d{2}-\d{2})".{0,200}?'
-        r'data-end-date="(\d{4}-\d{2}-\d{2})"',
+        r'<div class="from-date cell">\s*'
+        r'<div class="day">(\d{1,2})</div>\s*'
+        r'<div class="month">(\w+)</div>\s*'
+        r'</div>\s*'
+        r'(?:<div class="to-date cell">\s*'
+        r'<div class="day">(\d{1,2})</div>\s*'
+        r'<div class="month">(\w+)</div>\s*'
+        r'</div>)?'
+        r'.*?'
+        r'<div class="event-name cell">([^<]+)</div>'
+        r'.*?'
+        r'countrycode-(\w{2})'
+        r'.*?'
+        r'<div class="country-name">([^<]+)</div>',
         re.DOTALL,
     )
-    matches = pattern.findall(html)
 
     calendar = []
-    for i, (name, country, start, end) in enumerate(matches, start=1):
+    for m in pattern.finditer(page_html):
+        from_day, from_month_txt, to_day, to_month_txt, name, country_iso2, country_name = m.groups()
+
+        from_month = month_map.get(from_month_txt[:3].title())
+        if not from_month:
+            continue  # mes no reconocido, fuera para revisión manual
+
+        start = f"{year}-{from_month}-{int(from_day):02d}"
+
+        if to_day and to_month_txt:
+            to_month = month_map.get(to_month_txt[:3].title())
+            # si el rally cruza fin de año (ej. 30 Dic - 2 Ene), el año
+            # del "to" sería el siguiente -- caso raro en WRC, pero por si acaso
+            to_year = year + 1 if to_month and int(to_month) < int(from_month) else year
+            end = f"{to_year}-{to_month}-{int(to_day):02d}" if to_month else start
+        else:
+            end = start  # sin rango, un único día
+
         calendar.append({
-            "round": i,
-            "name": name.strip(),
-            "country": country.strip(),
-            "flag": "",  # rellenar a mano
+            "round": len(calendar) + 1,
+            "name": html.unescape(name.strip()),
+            "country": iso2_to_country_name(country_iso2, fallback=html.unescape(country_name.strip())),
+            "flag": iso2_to_flag(country_iso2),
             "start": start,
             "end": end,
         })
 
     if not calendar:
         print("[WRC] AVISO: el patrón de scraping no encontró nada en la web de la FIA. "
-              "Es probable que haya cambiado de estructura. "
-              "Rellena el calendario WRC a mano este año.", file=sys.stderr)
+              "Es probable que haya cambiado de estructura, o que no haya eventos "
+              "'from-date'/'to-date' en este formato. Rellena el calendario WRC a mano.",
+              file=sys.stderr)
     else:
-        print(f"[WRC] {len(calendar)} rallies encontrados (revisar flag).")
+        print(f"[WRC] {len(calendar)} rallies encontrados "
+              "(revisar si hay alguno cancelado/aplazado: no se detecta automáticamente en WRC).")
 
     return calendar
 
 
 def fetch_wrc_drivers() -> list[dict]:
     """
-    Scraping best-effort de la tabla de pilotos Rally1 en wrc.com.
-    A diferencia del calendario (que usa la FIA, más estable), aquí
-    seguimos en la web comercial porque la FIA no publica una entry
-    list de pilotos WRC tan clara como la de F1. Igual de frágil que
-    el resto de funciones de scraping: solo es un punto de partida.
+    Scraping de la tabla de pilotos Rally1 en wrc.com/en/teams-and-drivers.
+
+    AVISO HONESTO: esta web usa Web Components personalizados (Cosmos,
+    el sistema de diseño de Red Bull) que se "hidratan" con JavaScript.
+    El HTML que descarga urllib (sin ejecutar JS) puede llegar
+    prácticamente vacío, en cuyo caso esta función no encontrará nada
+    y caerá al aviso de "rellenar a mano" -- que es el comportamiento
+    esperado y aceptado para este caso, no un fallo del patrón en sí.
     """
     print(f"[WRC] Descargando pilotos desde {WRC_DRIVERS_URL} ...")
     try:
-        html = fetch_url(WRC_DRIVERS_URL)
+        page_html = fetch_url(WRC_DRIVERS_URL)
     except urllib.error.URLError as exc:
         print(f"[WRC] AVISO: no se pudo descargar pilotos ({exc}). "
               f"Tendrás que rellenarlo a mano.", file=sys.stderr)
         return []
 
+    # Patrón sobre la estructura confirmada por inspección manual del
+    # navegador. IMPORTANTE: la página lista pilotos Y copilotos juntos
+    # en tarjetas "driver-couple-card". Anclamos el patrón al wrapper
+    # class="driver-couple-card__driver" (no "...__co-driver") para
+    # quedarnos solo con los pilotos.
     pattern = re.compile(
-        r'data-driver-name="([^"]+)".{0,300}?'
-        r'data-team-name="([^"]+)".{0,300}?'
-        r'data-nationality="([^"]+)"',
+        r'class="driver-couple-card__driver">'
+        r'.*?'
+        r'class="driver-view__name"[^>]*>([^<]+)</cosmos-title-[\d.-]+>'
+        r'.*?'
+        r'<img[^>]*alt="([^"]+)"[^>]*class="driver-view__flag"',
         re.DOTALL,
     )
-    matches = pattern.findall(html)
+    matches = pattern.findall(page_html)
 
     drivers = []
-    for name, team, country in matches:
-        # WRC.com no expone un código de 3 letras como tal:
-        # se genera una sugerencia a partir del apellido, a revisar a mano.
-        surname = name.strip().split()[-1]
-        suggested_code = surname[:3].upper()
+    for name, country in matches:
+        name = html.unescape(name.strip())
+        surname = name.split()[-1]
+        suggested_code = surname[:3].upper()  # sugerencia, revisar colisiones a mano
         drivers.append({
-            "code": suggested_code,  # SUGERENCIA, revisar colisiones a mano
-            "name": name.strip(),
-            "team": team.strip(),
-            "country": country.strip(),
+            "code": suggested_code,
+            "name": name,
+            "team": "",  # esta página no muestra el equipo junto al piloto; rellenar a mano
+            "country": html.unescape(country.strip()),
         })
 
     if not drivers:
-        print("[WRC] AVISO: el patrón de scraping no encontró pilotos. "
-              "Rellena la lista WRC a mano este año.", file=sys.stderr)
+        print("[WRC] AVISO: el patrón de scraping no encontró pilotos. Es muy probable que "
+              "wrc.com cargue esta lista por JavaScript (Web Components) y urllib no pueda "
+              "verla sin ejecutar JS. Rellena la lista WRC a mano este año.", file=sys.stderr)
     else:
-        print(f"[WRC] {len(drivers)} pilotos encontrados (revisar 'code', "
-              "puede haber colisiones entre pilotos con mismo apellido).")
+        print(f"[WRC] {len(drivers)} pilotos encontrados (revisar 'code' y 'team', "
+              "este último siempre vacío en esta fuente).")
 
     return drivers
 
@@ -341,7 +508,7 @@ def main():
     if not args.skip_f1:
         try:
             f1_calendar = fetch_fia_f1_calendar(args.year)
-            f1_drivers = fetch_fia_f1_drivers(args.year)
+            f1_drivers = fetch_f1_drivers(args.year)
         except (urllib.error.URLError, json.JSONDecodeError) as exc:
             print(f"[F1] ERROR obteniendo datos: {exc}", file=sys.stderr)
             f1_calendar, f1_drivers = [], []
