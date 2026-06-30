@@ -1,39 +1,15 @@
 {
-  "generated_at": "2026-06-25T11:38:13.092791+02:00",
-  "target_sunday": "2026-06-28",
+  "generated_at": "2026-06-30T10:25:30.993890+02:00",
+  "target_sunday": "2026-07-05",
   "races": [
     {
-      "category": "WRC",
-      "round": 8,
-      "name": "EKO Acropolis Rally Greece",
-      "country": "Greece",
-      "flag": "🇬🇷",
-      "date": "2026-06-28",
-      "drivers": [
-        "ARM",
-        "EVA",
-        "FOU",
-        "KAT",
-        "LAP",
-        "MCE",
-        "MUN",
-        "NEU",
-        "OGI",
-        "PAD",
-        "PAJ",
-        "SES",
-        "SOL",
-        "SOR"
-      ]
-    },
-    {
       "category": "F1",
-      "round": 8,
-      "name": "Austrian Grand Prix",
-      "country": "Austria",
-      "flag": "🇦🇹",
-      "date": "2026-06-28",
-      "sprint": false,
+      "round": 9,
+      "name": "British Grand Prix",
+      "country": "United Kingdom",
+      "flag": "🇬🇧",
+      "date": "2026-07-05",
+      "sprint": true,
       "drivers": [
         "ALB",
         "ALO",
