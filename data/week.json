@@ -1,15 +1,39 @@
 {
-  "generated_at": "2026-06-30T10:27:12.344550+02:00",
-  "target_sunday": "2026-07-05",
+  "generated_at": "2026-07-15T19:57:42.936693+02:00",
+  "target_sunday": "2026-07-19",
   "races": [
     {
-      "category": "F1",
+      "category": "WRC",
       "round": 9,
-      "name": "British Grand Prix",
-      "country": "United Kingdom",
-      "flag": "🇬🇧",
-      "date": "2026-07-05",
-      "sprint": true,
+      "name": "Rally Estonia",
+      "country": "Estonia",
+      "flag": "🇪🇪",
+      "date": "2026-07-19",
+      "drivers": [
+        "ARM",
+        "EVA",
+        "FOU",
+        "KAT",
+        "LAP",
+        "MCE",
+        "MUN",
+        "NEU",
+        "OGI",
+        "PAD",
+        "PAJ",
+        "SES",
+        "SOL",
+        "SOR"
+      ]
+    },
+    {
+      "category": "F1",
+      "round": 10,
+      "name": "Belgian Grand Prix",
+      "country": "Belgium",
+      "flag": "🇧🇪",
+      "date": "2026-07-19",
+      "sprint": false,
       "drivers": [
         "ALB",
         "ALO",
