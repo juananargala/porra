@@ -1,5 +1,4 @@
 name: Check porra semanal
-
 on:
   schedule:
     # Cubre 21:30 hora de Madrid tanto en CET (UTC+1) como en CEST (UTC+2):
@@ -16,28 +15,26 @@ on:
         required: false
         default: "false"
         type: boolean
-
 permissions:
   contents: write
-
+concurrency:
+  group: check-porra
+  cancel-in-progress: false
 jobs:
   check-porra:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repo
         uses: actions/checkout@v4
-
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
           python-version: "3.12"
-
       - name: Ejecutar check_porra.py
         env:
           NTFY_TOPIC: ${{ secrets.NTFY_TOPIC }}
           FORCE_RUN: ${{ inputs.force }}
         run: python3 scripts/check_porra.py
-
       - name: Commit data/week.json si ha cambiado
         run: |
           git config user.name "porra-bot"
@@ -47,5 +44,6 @@ jobs:
             echo "Sin cambios en week.json, no se hace commit."
           else
             git commit -m "Actualizar week.json [skip ci]"
+            git pull --rebase origin main
             git push
           fi
