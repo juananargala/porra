@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 """
 check_porra.py — versión simplificada (datos estáticos, sin dependencias externas)
 
@@ -79,8 +78,14 @@ def build_driver_lookup(drivers: list[dict]) -> dict:
 # como CEST sin tener que cambiar el workflow dos veces al año. Solo UNA de
 # las dos ejecuciones coincide con la hora local deseada en Madrid; la otra
 # debe descartarse aquí para no duplicar la notificación.
+#
+#   Cron 19:30 UTC -> 20:30 Madrid en CET (invierno) / 21:30 Madrid en CEST (verano)
+#   Cron 20:30 UTC -> 21:30 Madrid en CET (invierno) / 22:30 Madrid en CEST (verano)
+#
+# El objetivo real es disparar sobre las 21:30 hora de Madrid en ambas
+# estaciones (ver README), así que el objetivo horario debe ser 21, no 20.
 TARGET_WEEKDAY_MADRID = 0   # lunes (datetime.weekday(): lunes=0)
-TARGET_HOUR_MADRID = 20     # ejecución deseada ~20:30 hora de Madrid
+TARGET_HOUR_MADRID = 21     # ejecución deseada ~21:30 hora de Madrid
 
 
 def should_run(now_madrid: datetime) -> bool:
