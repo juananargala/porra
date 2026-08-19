@@ -84,8 +84,10 @@ def build_driver_lookup(drivers: list[dict]) -> dict:
 #
 # El objetivo real es disparar sobre las 21:30 hora de Madrid en ambas
 # estaciones (ver README), así que el objetivo horario debe ser 21, no 20.
-TARGET_WEEKDAY_MADRID = 0   # lunes (datetime.weekday(): lunes=0)
-TARGET_HOUR_MADRID = 21     # ejecución deseada ~21:30 hora de Madrid
+# TARGET_WEEKDAY_MADRID = 0   # lunes (datetime.weekday(): lunes=0)
+# TARGET_HOUR_MADRID = 21     # ejecución deseada ~21:30 hora de Madrid
+TARGET_WEEKDAY_MADRID = 2   # TEMPORAL: miércoles
+TARGET_HOUR_MADRID = 17     # TEMPORAL: hora actual
 
 
 def should_run(now_madrid: datetime) -> bool:
