@@ -75,27 +75,54 @@ def build_driver_lookup(drivers: list[dict]) -> dict:
 
 
 # El workflow dispara dos cron en UTC (19:30 y 20:30) para cubrir tanto CET
-# como CEST sin tener que cambiar el workflow dos veces al año. Solo UNA de
-# las dos ejecuciones coincide con la hora local deseada en Madrid; la otra
-# debe descartarse aquí para no duplicar la notificación.
+# como CEST sin tener que cambiar el workflow dos veces al año.
 #
 #   Cron 19:30 UTC -> 20:30 Madrid en CET (invierno) / 21:30 Madrid en CEST (verano)
 #   Cron 20:30 UTC -> 21:30 Madrid en CET (invierno) / 22:30 Madrid en CEST (verano)
 #
-# El objetivo real es disparar sobre las 21:30 hora de Madrid en ambas
-# estaciones (ver README), así que el objetivo horario debe ser 21, no 20.
-TARGET_WEEKDAY_MADRID = 0   # lunes (datetime.weekday(): lunes=0)
-TARGET_HOUR_MADRID = 21     # ejecución deseada ~21:30 hora de Madrid
+# IMPORTANTE: el evento "schedule" de GitHub Actions es "best effort" y puede
+# retrasarse considerablemente en horas de carga alta (a veces varias horas,
+# incluso cruzando la medianoche a la madrugada del martes). Comprobar una
+# hora EXACTA (weekday==0 and hour==21) provocó que ejecuciones automáticas
+# se descartaran en silencio -> semanas enteras sin generar week.json aunque
+# el workflow apareciera como "Success" en GitHub.
+#
+# Por eso aquí se usa una ventana amplia (lunes completo + madrugada/mañana
+# del martes, para absorber retrasos del cron) en vez de una hora exacta.
+# La protección real contra duplicados no depende de esta ventana, sino de
+# comprobar si week.json ya está generado para el domingo objetivo (ver
+# already_generated_for más abajo) -> aunque el cron dispare varias veces
+# dentro de la ventana, o tarde, solo se genera y notifica una vez por semana.
+TARGET_WEEKDAY_MADRID = 0        # lunes (datetime.weekday(): lunes=0)
+LATE_WEEKDAY_MADRID = 1          # martes: se acepta como "lunes con retraso"
+LATE_CUTOFF_HOUR_MADRID = 12     # solo martes de madrugada/mañana, no todo el día
 
 
 def should_run(now_madrid: datetime) -> bool:
     if os.environ.get("FORCE_RUN", "").lower() in ("1", "true", "yes"):
         print("FORCE_RUN activo: se salta la comprobación de día/hora (ejecución manual de prueba).")
         return True
-    return (
-        now_madrid.weekday() == TARGET_WEEKDAY_MADRID
-        and now_madrid.hour == TARGET_HOUR_MADRID
-    )
+    weekday = now_madrid.weekday()
+    if weekday == TARGET_WEEKDAY_MADRID:
+        return True
+    if weekday == LATE_WEEKDAY_MADRID and now_madrid.hour < LATE_CUTOFF_HOUR_MADRID:
+        return True
+    return False
+
+
+def already_generated_for(target_sunday: date) -> bool:
+    """Evita duplicados: si week.json ya tiene este domingo como objetivo,
+    no hace falta volver a generar ni volver a notificar, aunque el cron
+    se haya disparado más de una vez (o con retraso) dentro de la ventana."""
+    if not WEEK_OUTPUT_FILE.exists():
+        return False
+    try:
+        with WEEK_OUTPUT_FILE.open(encoding="utf-8") as f:
+            existing = json.load(f)
+    except (json.JSONDecodeError, OSError) as exc:
+        print(f"AVISO: no se pudo leer week.json existente ({exc}); se regenera igualmente.", file=sys.stderr)
+        return False
+    return existing.get("target_sunday") == target_sunday.isoformat()
 
 
 def main():
@@ -105,15 +132,22 @@ def main():
 
     if not should_run(now_madrid):
         print(
-            "Ejecución descartada: no es la franja horaria objetivo en Madrid "
-            f"(lunes ~{TARGET_HOUR_MADRID}:30). Esto es normal para el cron "
-            "que no coincide con la temporada CET/CEST actual."
+            "Ejecución descartada: fuera de la ventana objetivo "
+            "(lunes, o martes de madrugada/mañana como margen para retrasos del cron)."
         )
         return
 
     today = now_madrid.date()
     target_sunday = next_sunday(today)
     print(f"Domingo objetivo: {target_sunday.isoformat()}")
+
+    force = os.environ.get("FORCE_RUN", "").lower() in ("1", "true", "yes")
+    if not force and already_generated_for(target_sunday):
+        print(
+            f"week.json ya está actualizado para el domingo {target_sunday.isoformat()}; "
+            "no se hace nada (evita notificaciones duplicadas por reintentos o retrasos del cron)."
+        )
+        return
 
     calendar = load_json(CALENDAR_FILE)
     drivers_wrc = load_json(DRIVERS_WRC_FILE)
