@@ -1,14 +1,14 @@
 {
-  "generated_at": "2026-08-24T21:52:37.033025+02:00",
-  "target_sunday": "2026-08-30",
+  "generated_at": "2026-09-09T11:03:36.661314+02:00",
+  "target_sunday": "2026-09-13",
   "races": [
     {
       "category": "WRC",
-      "round": 11,
-      "name": "Rally del Paraguay",
-      "country": "Paraguay",
-      "flag": "🇵🇾",
-      "date": "2026-08-30",
+      "round": 12,
+      "name": "Rally Chile Bio Bío",
+      "country": "Chile",
+      "flag": "🇨🇱",
+      "date": "2026-09-13",
       "drivers": [
         "ARM",
         "EVA",
@@ -24,6 +24,39 @@
         "SES",
         "SOL",
         "SOR"
+      ]
+    },
+    {
+      "category": "F1",
+      "round": 14,
+      "name": "Spanish Grand Prix (Madrid)",
+      "country": "Spain",
+      "flag": "🇪🇸",
+      "date": "2026-09-13",
+      "sprint": false,
+      "drivers": [
+        "ALB",
+        "ALO",
+        "ANT",
+        "BEA",
+        "BOR",
+        "BOT",
+        "COL",
+        "GAS",
+        "HAD",
+        "HAM",
+        "HUL",
+        "LAW",
+        "LEC",
+        "LIN",
+        "NOR",
+        "OCO",
+        "PER",
+        "PIA",
+        "RUS",
+        "SAI",
+        "STR",
+        "VER"
       ]
     }
   ]
