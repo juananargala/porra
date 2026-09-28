@@ -1,5 +1,30 @@
 {
-  "generated_at": "2026-09-23T18:59:20.527380+02:00",
-  "target_sunday": "2026-09-27",
-  "races": []
+  "generated_at": "2026-09-29T01:52:01.967480+02:00",
+  "target_sunday": "2026-10-04",
+  "races": [
+    {
+      "category": "WRC",
+      "round": 13,
+      "name": "Rally Italia Sardegna",
+      "country": "Italy",
+      "flag": "🇮🇹",
+      "date": "2026-10-04",
+      "drivers": [
+        "ARM",
+        "EVA",
+        "FOU",
+        "KAT",
+        "LAP",
+        "MCE",
+        "MUN",
+        "NEU",
+        "OGI",
+        "PAD",
+        "PAJ",
+        "SES",
+        "SOL",
+        "SOR"
+      ]
+    }
+  ]
 }
