@@ -1,39 +1,5 @@
 {
-  "generated_at": "2026-10-06T02:53:41.653175+02:00",
-  "target_sunday": "2026-10-11",
-  "races": [
-    {
-      "category": "F1",
-      "round": 16,
-      "name": "Singapore Grand Prix",
-      "country": "Singapore",
-      "flag": "🇸🇬",
-      "date": "2026-10-11",
-      "sprint": true,
-      "drivers": [
-        "ALB",
-        "ALO",
-        "ANT",
-        "BEA",
-        "BOR",
-        "BOT",
-        "COL",
-        "GAS",
-        "HAD",
-        "HAM",
-        "HUL",
-        "LAW",
-        "LEC",
-        "LIN",
-        "NOR",
-        "OCO",
-        "PER",
-        "PIA",
-        "RUS",
-        "SAI",
-        "STR",
-        "VER"
-      ]
-    }
-  ]
+  "generated_at": "2026-10-13T03:30:19.424218+02:00",
+  "target_sunday": "2026-10-18",
+  "races": []
 }
