@@ -1,39 +1,5 @@
 {
-  "generated_at": "2026-11-03T02:41:58.768822+01:00",
-  "target_sunday": "2026-11-08",
-  "races": [
-    {
-      "category": "F1",
-      "round": 19,
-      "name": "São Paulo Grand Prix",
-      "country": "Brazil",
-      "flag": "🇧🇷",
-      "date": "2026-11-08",
-      "sprint": false,
-      "drivers": [
-        "ALB",
-        "ALO",
-        "ANT",
-        "BEA",
-        "BOR",
-        "BOT",
-        "COL",
-        "GAS",
-        "HAD",
-        "HAM",
-        "HUL",
-        "LAW",
-        "LEC",
-        "LIN",
-        "NOR",
-        "OCO",
-        "PER",
-        "PIA",
-        "RUS",
-        "SAI",
-        "STR",
-        "VER"
-      ]
-    }
-  ]
+  "generated_at": "2026-11-10T03:19:24.127131+01:00",
+  "target_sunday": "2026-11-15",
+  "races": []
 }
